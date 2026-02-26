@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>osharushki</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 20px 20px;
+            overflow: hidden;
+        }
+
+        /* ========== НАВИГАЦИЯ ========== */
+        .nav {
+            display: flex;
+            gap: 80px;
+            margin-bottom: 40px;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            font-size: 28px;
+            font-weight: 300;
+            color: #000;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item:nth-child(5) {
+            font-size: 24px;
+        }
+
+        .nav-item.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .nav-item:hover { opacity: 1; }
+        .nav-item.active { opacity: 1; }
+
+        /* ========== КОНТЕЙНЕРЫ ВЕРСИЙ ========== */
+        .version { display: none; width: 100%; max-width: 1400px; }
+        .version.active { display: block; }
+
+        /* ========== ВЕРСИЯ 1 - СЕТКА ========== */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 0;
+            width: 100%;
+            aspect-ratio: 5/4;
+        }
+
+        .square {
+            position: relative;
+            aspect-ratio: 1;
+            cursor: pointer;
+            overflow: hidden;
+            transition: filter 0.3s ease;
+        }
+
+        .square:hover { filter: brightness(1.1); }
+
+        .shape-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 70%;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .square.active .shape-container {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .square:not(.active) .shape-container {
+            transform: translate(-50%, -50%) scale(0.5) rotate(90deg);
+        }
+
+        .shape-container svg { width: 100%; height: 100%; }
+
+        /* ========== ВЕРСИЯ 2 - ЛИЦО ========== */
+        .face-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            padding-top: 50px;
+        }
+
+        .face {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            cursor: pointer;
+            overflow: visible;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .face:hover { transform: scale(1.02); }
+
+        .face-zone {
+            position: absolute;
+            cursor: pointer;
+            z-index: 10;
+            transition: background 0.2s ease;
+            border: 3px solid;
+        }
+
+        .face-zone:hover { background: rgba(255, 255, 255, 0.3); }
+        .face-zone[data-type="eyes"] { border-color: #0066ff; }
+        .face-zone[data-type="nose"] { border-color: #00ff00; }
+        .face-zone[data-type="mouth"] { border-color: #ff0066; }
+        .face-zone[data-type="ears"] { border-color: #ffcc00; }
+        .face-zone[data-type="hair"] { border-color: #999999; }
+
+        .face-element {
+            position: absolute;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            opacity: 0;
+            z-index: 5;
+        }
+
+        .face-element.visible { opacity: 1; }
+        .face-element svg { width: 100%; height: 100%; }
+
+        /* ========== ВЕРСИЯ 3 - ЖИВОЕ СТЕКЛО ========== */
+        #version3 {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            overflow: hidden;
+        }
+
+        .glass-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+        }
+
+        .glass-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glass-shape {
+            position: absolute;
+            cursor: grab;
+            transition: transform 0.3s ease, filter 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .glass-shape:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+
+        .glass-shape svg {
+            width: 100%;
+            height: 100%;
+            filter: none;
+        }
+
+        /* ========== ВЕРСИЯ 4 - ГЕОМЕТРИЧЕСКАЯ СЕТКА ========== */
+        #version4 {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        /* Текстура шума поверх всего */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.08;
+        }
+
+        /* Контейнер сетки */
+        .grid-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+        }
+
+        /* Ячейка сетки */
+        .grid-cell {
+            position: relative;
+            border-right: 1px solid #262626;
+            border-bottom: 1px solid #262626;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .grid-cell:last-child {
+            border-right: none;
+        }
+
+        .grid-cell:nth-child(7n) {
+            border-right: none;
+        }
+
+        .grid-cell:nth-child(n+29) {
+            border-bottom: none;
+        }
+
+        /* SVG фигура в ячейке */
+        .grid-cell svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Линии для перетаскивания */
+        .resize-handle-v {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            cursor: col-resize;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .resize-handle-v:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .resize-handle-h {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 20px;
+            cursor: row-resize;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .resize-handle-h:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .nav { gap: 50px; }
+            .nav-item { font-size: 22px; }
+        }
+
+        /* ========== ВЕРСИЯ 5 - PIXEL SNOWFALL ========== */
+        #version5 {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        #snowCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .color-menu {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 10px;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .color-btn.active {
+            border-color: #000;
+            transform: scale(1.15);
+        }
+
+        .color-btn.random {
+            background: linear-gradient(135deg, #ebe4da, #ffa9dc, #fc5927, #feba27, #aea435, #76b3d0);
+            color: #262626;
+        }
+
+        .color-btn.black {
+            color: #fff;
+        }
+
+        .color-btn.white {
+            color: #333;
+            text-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="nav">
+        <div class="nav-item active" data-version="1">1</div>
+        <div class="nav-item disabled" data-version="2">2</div>
+        <div class="nav-item" data-version="3">3</div>
+        <div class="nav-item" data-version="4">4</div>
+        <div class="nav-item" data-version="5">5</div>
+    </nav>
+
+    <!-- Версия 1 -->
+    <div class="version active" id="version1">
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <!-- Версия 2 -->
+    <div class="version" id="version2">
+        <div class="face-container">
+            <div class="face" id="face"></div>
+        </div>
+    </div>
+
+    <!-- Версия 3 -->
+    <div class="version" id="version3">
+        <div class="glass-bg"></div>
+        <div class="glass-container" id="glassContainer"></div>
+    </div>
+
+    <!-- Версия 4 -->
+    <div class="version" id="version4">
+        <div class="grid-container" id="gridContainer"></div>
+    </div>
+
+    <!-- Версия 5 - Pixel Snowfall -->
+    <div class="version" id="version5">
+        <canvas id="snowCanvas"></canvas>
+        <div class="color-menu" id="colorMenu">
+            <div class="color-btn" data-color="white" style="background: #ebe4da;"></div>
+            <div class="color-btn" data-color="pink" style="background: #ffa9dc;"></div>
+            <div class="color-btn" data-color="orange" style="background: #fc5927;"></div>
+            <div class="color-btn" data-color="yellow" style="background: #feba27;"></div>
+            <div class="color-btn" data-color="green" style="background: #aea435;"></div>
+            <div class="color-btn" data-color="blue" style="background: #76b3d0;"></div>
+            <div class="color-btn" data-color="black" style="background: #262626;"></div>
+            <div class="color-btn random" data-color="random" style="color: #262626;">?</div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ОБЩИЕ ДАННЫЕ ==========
+        const allColors = [
+            '#ebe4da',  // белый
+            '#ffa9dc',  // розовый
+            '#fc5927',  // оранжевый
+            '#feba27',  // жёлтый
+            '#aea435',  // зелёный
+            '#76b3d0',  // голубой
+            '#262626'   // чёрный
+        ];
+
+        // ========== НАВИГАЦИЯ ==========
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.onclick = function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                const versionNum = this.dataset.version;
+                document.querySelectorAll('.version').forEach(v => {
+                    if (v.id === 'version' + versionNum) {
+                        v.classList.add('active');
+                    } else {
+                        v.classList.remove('active');
+                    }
+                });
+            };
+        });
+
+        // ========== ВЕРСИЯ 1 - СЕТКА ==========
+        function getRandomShape() {
+            const shapes = [
+                `<polygon points="50,5 61,35 95,35 68,55 79,90 50,70 21,90 32,55 5,35 39,35" />`,
+                `<polygon points="50,10 60,35 85,35 65,55 75,90 50,70 25,90 35,55 15,35 40,35" />`,
+                `<circle cx="50" cy="25" r="18" /><circle cx="71" cy="46" r="18" /><circle cx="50" cy="67" r="18" /><circle cx="29" cy="46" r="18" /><circle cx="50" cy="46" r="15" />`,
+                `<circle cx="50" cy="20" r="20" /><circle cx="75" cy="35" r="20" /><circle cx="75" cy="65" r="20" /><circle cx="50" cy="80" r="20" /><circle cx="25" cy="65" r="20" /><circle cx="25" cy="35" r="20" /><circle cx="50" cy="50" r="18" />`,
+                `<polygon points="50,50 50,10 57,10 57,50 Z" /><polygon points="50,50 68,15 73,20 55,55 Z" /><polygon points="50,50 85,35 90,42 55,55 Z" /><polygon points="50,50 90,50 90,57 55,55 Z" /><polygon points="50,50 85,65 90,58 55,55 Z" /><polygon points="50,50 68,85 73,90 55,55 Z" /><polygon points="50,50 50,90 57,90 57,55 Z" /><polygon points="50,50 32,85 27,90 45,55 Z" /><polygon points="50,50 15,65 10,58 45,55 Z" /><polygon points="50,50 10,50 10,57 45,55 Z" /><polygon points="50,50 15,35 10,42 45,55 Z" /><polygon points="50,50 32,15 27,10 45,55 Z" />`,
+                `<polygon points="50,5 55,35 85,35 60,50 85,65 55,65 50,95 45,65 15,65 40,50 15,35 45,35" />`,
+                `<polygon points="20,70 20,30 35,45 50,20 65,45 80,30 80,70" />`,
+                `<circle cx="35" cy="35" r="28" /><circle cx="65" cy="35" r="28" /><circle cx="35" cy="65" r="28" /><circle cx="65" cy="65" r="28" />`,
+                `<circle cx="50" cy="50" r="40" />`,
+                `<polygon points="50,10 90,50 50,90 10,50" />`,
+                `<polygon points="50,15 85,80 15,80" />`,
+                `<polygon points="15,20 85,20 50,85" />`,
+                `<polygon points="50,10 85,30 85,70 50,90 15,70 15,30" />`,
+                `<circle cx="50" cy="50" r="25" /><polygon points="50,10 55,30 45,30 Z" /><polygon points="50,90 55,70 45,70 Z" /><polygon points="10,50 30,55 30,45 Z" /><polygon points="90,50 70,55 70,45 Z" /><polygon points="22,22 35,35 30,40 Z" /><polygon points="78,22 65,35 70,40 Z" /><polygon points="22,78 35,65 30,60 Z" /><polygon points="78,78 65,65 70,60 Z" />`,
+                `<polygon points="35,10 65,10 65,35 90,35 90,65 65,65 65,90 35,90 35,65 10,65 10,35 35,35" />`,
+                `<polygon points="20,15 80,15 50,50 80,85 20,85 50,50" />`,
+                `<polygon points="50,10 70,40 30,40 Z" /><polygon points="50,35 80,70 20,70 Z" /><rect x="42" y="70" width="16" height="20" />`
+            ];
+            return shapes[Math.floor(Math.random() * shapes.length)];
+        }
+
+        function getRandomColor(availableColors) {
+            return availableColors[Math.floor(Math.random() * availableColors.length)];
+        }
+
+        function getAvailableColors(index, colors) {
+            const rows = 4, cols = 5;
+            const row = Math.floor(index / cols);
+            const col = index % cols;
+            const neighborColors = new Set();
+            if (row > 0) neighborColors.add(colors[index - cols]);
+            if (row < rows - 1) neighborColors.add(colors[index + cols]);
+            if (col > 0) neighborColors.add(colors[index - 1]);
+            if (col < cols - 1) neighborColors.add(colors[index + 1]);
+            return allColors.filter(c => !neighborColors.has(c));
+        }
+
+        function toggleShape(square) {
+            const container = square.querySelector('.shape-container');
+            const squareColor = square.dataset.color;
+            const availableColors = allColors.filter(c => c !== squareColor);
+            
+            if (square.classList.contains('active')) {
+                square.classList.remove('active');
+                // Звук при исчезновении (ниже по тону)
+                playDisappearSound();
+                setTimeout(() => { container.innerHTML = ''; }, 400);
+            } else {
+                const shape = getRandomShape();
+                const color = getRandomColor(availableColors);
+                container.innerHTML = `<svg viewBox="0 0 100 100" fill="${color}">${shape}</svg>`;
+                square.classList.add('active');
+                // Звук при появлении
+                playClickSound();
+            }
+        }
+
+        function generateGrid() {
+            const grid = document.getElementById('grid');
+            const rows = 4, cols = 5, total = rows * cols;
+            const colors = [];
+            
+            for (let i = 0; i < total; i++) {
+                const available = getAvailableColors(i, colors);
+                colors.push(getRandomColor(available));
+            }
+            
+            for (let i = 0; i < total; i++) {
+                const square = document.createElement('div');
+                square.className = 'square';
+                square.style.backgroundColor = colors[i];
+                square.dataset.color = colors[i];
+                square.innerHTML = '<div class="shape-container"></div>';
+                square.onclick = function() { toggleShape(this); };
+                grid.appendChild(square);
+            }
+        }
+
+        // ========== ВЕРСИЯ 2 - ЛИЦО ==========
+        const eyesVariants = [
+            `<g><circle cx="35" cy="45" r="12" fill="#fff"/><circle cx="35" cy="45" r="6" fill="#000"/><circle cx="65" cy="45" r="12" fill="#fff"/><circle cx="65" cy="45" r="6" fill="#000"/></g>`,
+            `<g><circle cx="35" cy="45" r="16" fill="#fff"/><circle cx="35" cy="45" r="8" fill="#000"/><circle cx="65" cy="45" r="16" fill="#fff"/><circle cx="65" cy="45" r="8" fill="#000"/></g>`,
+            `<g><circle cx="35" cy="45" r="12" fill="#fff"/><circle cx="35" cy="45" r="6" fill="#F082AC"/><circle cx="65" cy="45" r="12" fill="#fff"/><circle cx="65" cy="45" r="6" fill="#F082AC"/></g>`,
+            `<g><circle cx="35" cy="45" r="10" fill="#000"/><circle cx="65" cy="45" r="10" fill="#000"/></g>`,
+            `<g><circle cx="35" cy="45" r="14" fill="#fff"/><circle cx="35" cy="45" r="7" fill="#000"/><circle cx="65" cy="45" r="14" fill="#fff"/><circle cx="65" cy="45" r="7" fill="#000"/></g>`
+        ];
+
+        const noseVariants = [
+            `<circle cx="50" cy="60" r="16" />`,
+            `<polygon points="50,48 62,72 38,72" />`,
+            `<path d="M50,46 L50,74" stroke="#000" stroke-width="8" stroke-linecap="round"/>`,
+            `<path d="M50,46 Q58,58 50,72" stroke="#000" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+            `<circle cx="50" cy="60" r="10" />`,
+            `<path d="M42,54 L50,68 L58,54" stroke="#000" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+            `<ellipse cx="50" cy="62" rx="10" ry="16" />`,
+            `<path d="M50,46 Q62,58 50,70" stroke="#000" stroke-width="8" fill="none" stroke-linecap="round"/>`
+        ];
+
+        const mouthVariants = [
+            `<path d="M28,72 Q50,96 72,72" stroke="#000" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+            `<path d="M26,72 Q50,100 74,72" stroke="#000" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+            `<line x1="32" y1="84" x2="68" y2="84" stroke="#000" stroke-width="8" stroke-linecap="round"/>`,
+            `<path d="M28,90 Q50,68 72,90" stroke="#000" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+            `<ellipse cx="50" cy="88" rx="20" ry="14" fill="#000"/>`,
+            `<path d="M36,76 Q50,88 64,76" stroke="#000" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+            `<path d="M32,80 Q44,72 50,80 Q56,72 68,80 Q56,90 50,86 Q44,90 32,80" fill="#000"/>`,
+            `<circle cx="50" cy="88" r="14" fill="#000"/>`
+        ];
+
+        const earsVariants = [
+            `<g><circle cx="10" cy="50" r="14" fill="#fff"/><path d="M8,48 Q12,52 14,48" stroke="#000" stroke-width="3" fill="none"/><circle cx="90" cy="50" r="14" fill="#fff"/><path d="M88,48 Q92,52 94,48" stroke="#000" stroke-width="3" fill="none"/></g>`,
+            `<g><path d="M5,48 Q12,52 8,55" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M95,48 Q88,52 92,55" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/></g>`,
+            `<g><circle cx="8" cy="50" r="10" fill="#fff"/><circle cx="92" cy="50" r="10" fill="#fff"/></g>`,
+            `<g><path d="M5,45 A8,8 0 0,1 5,55" stroke="#000" stroke-width="4" fill="none"/><path d="M95,45 A8,8 0 0,0 95,55" stroke="#000" stroke-width="4" fill="none"/></g>`,
+            `<g><circle cx="6" cy="50" r="16" fill="#fff"/><path d="M4,48 Q8,52 10,48" stroke="#000" stroke-width="3" fill="none"/><circle cx="94" cy="50" r="16" fill="#fff"/><path d="M92,48 Q96,52 98,48" stroke="#000" stroke-width="3" fill="none"/></g>`,
+            `<g><ellipse cx="8" cy="50" rx="10" ry="14" fill="#fff"/><path d="M6,48 Q10,52 12,48" stroke="#000" stroke-width="3" fill="none"/><ellipse cx="92" cy="50" rx="10" ry="14" fill="#fff"/><path d="M90,48 Q94,52 96,48" stroke="#000" stroke-width="3" fill="none"/></g>`
+        ];
+
+        const hairVariants = [
+            `<path d="M15,35 Q50,5 85,35 L90,30 Q50,-5 10,30 Z" />`,
+            `<path d="M15,35 Q25,10 35,30 Q45,8 55,30 Q65,10 75,30 Q85,10 90,35 L92,30 Q85,5 75,25 Q65,3 55,25 Q45,3 35,25 Q25,5 15,30 Z" />`,
+            `<rect x="12" y="15" width="76" height="25" rx="5" /><rect x="5" y="35" width="15" height="40" rx="5" /><rect x="80" y="35" width="15" height="40" rx="5" />`,
+            `<path d="M20,30 Q50,10 80,30 L85,80 Q85,95 75,90 L70,40 Q50,50 30,40 L25,90 Q15,95 15,80 Z" />`,
+            `<path d="M18,35 Q50,12 82,35 L85,45 Q50,30 15,45 Z" />`,
+            `<path d="M15,32 Q30,15 50,25 Q70,15 85,32 L90,40 Q70,28 50,38 Q30,28 10,40 Z" />`,
+            `<circle cx="25" cy="30" r="18" /><circle cx="50" cy="20" r="18" /><circle cx="75" cy="30" r="18" /><circle cx="15" cy="45" r="15" /><circle cx="85" cy="45" r="15" />`,
+            `<path d="M10,35 Q30,8 50,20 L55,15 L60,20 Q80,10 90,35 L88,50 Q70,35 50,45 Q30,35 12,50 Z" />`
+        ];
+
+        function getRandomFaceColor() {
+            return allColors[Math.floor(Math.random() * allColors.length)];
+        }
+
+        function getRandomElement(variants) {
+            return variants[Math.floor(Math.random() * variants.length)];
+        }
+
+        function getElementColor(faceColor) {
+            const available = allColors.filter(c => c !== faceColor);
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        function createFace() {
+            const faceColor = getRandomFaceColor();
+            const face = document.getElementById('face');
+            face.style.backgroundColor = faceColor;
+            face.innerHTML = '';
+
+            const zones = [
+                {
+                    name: 'hair',
+                    variants: hairVariants,
+                    zone: { top: '-10%', left: '37.5%', width: '25%', height: '20%' },
+                    element: { top: '-10%', left: '37.5%', width: '25%', height: '20%' }
+                },
+                {
+                    name: 'ears',
+                    variants: earsVariants,
+                    zones: [
+                        { top: '35%', left: '-15%', width: '20%', height: '20%' },
+                        { top: '35%', right: '-15%', width: '20%', height: '20%' }
+                    ],
+                    element: { top: '35%', left: '-15%', width: '130%', height: '20%' }
+                },
+                {
+                    name: 'eyes',
+                    variants: eyesVariants,
+                    zones: [
+                        { top: '35%', left: '15%', width: '20%', height: '20%' },
+                        { top: '35%', right: '15%', width: '20%', height: '20%' }
+                    ],
+                    element: { top: '35%', left: '15%', width: '70%', height: '20%' }
+                },
+                {
+                    name: 'nose',
+                    variants: noseVariants,
+                    zone: { top: '35%', left: '40%', width: '20%', height: '20%' },
+                    element: { top: '35%', left: '40%', width: '20%', height: '20%' }
+                },
+                {
+                    name: 'mouth',
+                    variants: mouthVariants,
+                    zone: { top: '60%', left: '40%', width: '20%', height: '20%' },
+                    element: { top: '60%', left: '40%', width: '20%', height: '20%' }
+                }
+            ];
+
+            zones.forEach(zone => {
+                if (zone.name === 'eyes') {
+                    zone.zones.forEach((eyeZone) => {
+                        const zoneEl = document.createElement('div');
+                        zoneEl.className = 'face-zone';
+                        zoneEl.style.cssText = `
+                            top: ${eyeZone.top};
+                            ${eyeZone.left ? 'left: ' + eyeZone.left : ''};
+                            ${eyeZone.right ? 'right: ' + eyeZone.right : ''};
+                            width: ${eyeZone.width};
+                            height: ${eyeZone.height};
+                        `;
+                        zoneEl.dataset.type = 'eyes';
+                        zoneEl.onclick = function(e) {
+                            e.stopPropagation();
+                            toggleElement(face, 'eyes', zone.variants, faceColor);
+                        };
+                        face.appendChild(zoneEl);
+                    });
+                } else if (zone.name === 'ears') {
+                    zone.zones.forEach((earZone) => {
+                        const zoneEl = document.createElement('div');
+                        zoneEl.className = 'face-zone';
+                        zoneEl.style.cssText = `
+                            top: ${earZone.top};
+                            ${earZone.left ? 'left: ' + earZone.left : ''};
+                            ${earZone.right ? 'right: ' + earZone.right : ''};
+                            width: ${earZone.width};
+                            height: ${earZone.height};
+                        `;
+                        zoneEl.dataset.type = 'ears';
+                        zoneEl.onclick = function(e) {
+                            e.stopPropagation();
+                            toggleElement(face, 'ears', zone.variants, faceColor);
+                        };
+                        face.appendChild(zoneEl);
+                    });
+                } else {
+                    const zoneEl = document.createElement('div');
+                    zoneEl.className = 'face-zone';
+                    zoneEl.style.cssText = `
+                        top: ${zone.zone.top};
+                        left: ${zone.zone.left};
+                        width: ${zone.zone.width};
+                        height: ${zone.zone.height};
+                    `;
+                    zoneEl.dataset.type = zone.name;
+                    zoneEl.onclick = function(e) {
+                        e.stopPropagation();
+                        toggleElement(face, zone.name, zone.variants, faceColor);
+                    };
+                    face.appendChild(zoneEl);
+                }
+
+                const elementContainer = document.createElement('div');
+                elementContainer.className = 'face-element';
+                elementContainer.dataset.type = zone.name;
+                elementContainer.style.cssText = `
+                    top: ${zone.element.top};
+                    left: ${zone.element.left || 'auto'};
+                    right: ${zone.element.right || 'auto'};
+                    width: ${zone.element.width};
+                    height: ${zone.element.height};
+                `;
+                face.appendChild(elementContainer);
+            });
+        }
+
+        function toggleElement(face, elementType, variants, faceColor) {
+            const elementContainer = face.querySelector(`.face-element[data-type="${elementType}"]`);
+            const isVisible = elementContainer.classList.contains('visible');
+
+            if (isVisible) {
+                elementContainer.classList.remove('visible');
+                setTimeout(() => { elementContainer.innerHTML = ''; }, 400);
+            } else {
+                const variant = getRandomElement(variants);
+                const color = getElementColor(faceColor);
+                const scale = ['eyes', 'nose', 'mouth'].includes(elementType) ? 4 : 2;
+                elementContainer.innerHTML = `<svg viewBox="0 0 100 100" fill="${color}" style="transform: scale(${scale}); transform-origin: center;">${variant}</svg>`;
+                elementContainer.classList.add('visible');
+            }
+        }
+
+        // ========== ВЕРСИЯ 3 - ЖИВОЕ СТЕКЛО ==========
+        const CONFIG = {
+            shapeCount: 20,
+            blurStrength: 30,
+            baseSpeed: 0.2,
+            rotationSpeed: 0.1,
+            breathAmplitude: 0.02,
+            breathSpeed: 0.001
+        };
+
+        const glassColors = [
+            { fill: ['rgba(235, 228, 218, 0.4)', 'rgba(235, 228, 218, 0.4)', 'rgba(235, 228, 218, 0.4)'], stroke: 'rgba(235, 228, 218, 0.9)' },  // белый
+            { fill: ['rgba(255, 169, 220, 0.4)', 'rgba(255, 169, 220, 0.4)', 'rgba(255, 169, 220, 0.4)'], stroke: 'rgba(255, 169, 220, 0.9)' },  // розовый
+            { fill: ['rgba(252, 89, 39, 0.4)', 'rgba(252, 89, 39, 0.4)', 'rgba(252, 89, 39, 0.4)'], stroke: 'rgba(252, 89, 39, 0.9)' },  // оранжевый
+            { fill: ['rgba(254, 186, 39, 0.4)', 'rgba(254, 186, 39, 0.4)', 'rgba(254, 186, 39, 0.4)'], stroke: 'rgba(254, 186, 39, 0.9)' },  // жёлтый
+            { fill: ['rgba(174, 164, 53, 0.4)', 'rgba(174, 164, 53, 0.4)', 'rgba(174, 164, 53, 0.4)'], stroke: 'rgba(174, 164, 53, 0.9)' },  // зелёный
+            { fill: ['rgba(118, 179, 208, 0.4)', 'rgba(118, 179, 208, 0.4)', 'rgba(118, 179, 208, 0.4)'], stroke: 'rgba(118, 179, 208, 0.9)' },  // голубой
+            { fill: ['rgba(38, 38, 38, 0.4)', 'rgba(38, 38, 38, 0.4)', 'rgba(38, 38, 38, 0.4)'], stroke: 'rgba(38, 38, 38, 0.9)' }   // чёрный
+        ];
+
+        let glassShapes = [];
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playGlassSound() {
+            initAudio();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const frequency = 800 + Math.random() * 1200;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1.5);
+        }
+
+        // Тихий песочный звук при приземлении
+        function playLandSound() {
+            initAudio();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            // Случайная высота для вариативности (низкие частоты для песочного звука)
+            const frequency = 200 + Math.random() * 300;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'triangle';  // Треугольная волна для мягкого звука
+            
+            // Короткое затухание
+            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        // Тихий шуршащий звук при перетаскивании границ
+        function playResizeSound() {
+            initAudio();
+            
+            const bufferSize = audioContext.sampleRate * 0.1;  // 100мс
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Генерируем белый шум
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = audioContext.createBufferSource();
+            noise.buffer = buffer;
+            
+            // Фильтр для мягкого шуршания
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1000 + Math.random() * 1000;  // Вариативность
+            
+            const gainNode = audioContext.createGain();
+            gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            noise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            noise.start(audioContext.currentTime);
+        }
+
+        // Приятный щелчок при появлении фигур
+        function playClickSound() {
+            initAudio();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            // Случайная высота для вариативности (средние частоты)
+            const frequency = 600 + Math.random() * 400;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'sine';  // Мягкая синусоида
+            
+            // Очень короткое затухание для щелчка
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // Щелчок при исчезновении фигур (ниже по тону)
+        function playDisappearSound() {
+            initAudio();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            // Случайная высота для вариативности (низкие частоты)
+            const frequency = 300 + Math.random() * 300;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'sine';  // Мягкая синусоида
+            
+            // Чуть длиннее затухание для исчезновения
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+        }
+
+        function createSVGShape(type, colorData, width, height, padding) {
+            const svgNS = "http://www.w3.org/2000/svg";
+            const gradientId = `gradient-${type}-${Math.random().toString(36).substr(2, 9)}`;
+            const gradient = document.createElementNS(svgNS, 'linearGradient');
+            gradient.setAttribute('id', gradientId);
+            
+            if (type === 'capsule') {
+                gradient.setAttribute('x1', '0%');
+                gradient.setAttribute('y1', '0%');
+                gradient.setAttribute('x2', '0%');
+                gradient.setAttribute('y2', '100%');
+            } else {
+                gradient.setAttribute('x1', '0%');
+                gradient.setAttribute('y1', '0%');
+                gradient.setAttribute('x2', '100%');
+                gradient.setAttribute('y2', '0%');
+            }
+            
+            colorData.fill.forEach((color, index) => {
+                const stop = document.createElementNS(svgNS, 'stop');
+                stop.setAttribute('offset', (index * 50) + '%');
+                stop.setAttribute('stop-color', color);
+                gradient.appendChild(stop);
+            });
+            
+            const filterId = `noise-${Math.random().toString(36).substr(2, 9)}`;
+            const filter = document.createElementNS(svgNS, 'filter');
+            filter.setAttribute('id', filterId);
+            
+            const feTurbulence = document.createElementNS(svgNS, 'feTurbulence');
+            feTurbulence.setAttribute('type', 'fractalNoise');
+            feTurbulence.setAttribute('baseFrequency', '0.8');
+            feTurbulence.setAttribute('numOctaves', '4');
+            feTurbulence.setAttribute('result', 'noise');
+            
+            const feColorMatrix = document.createElementNS(svgNS, 'feColorMatrix');
+            feColorMatrix.setAttribute('type', 'matrix');
+            feColorMatrix.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.4 0');
+            feColorMatrix.setAttribute('in', 'noise');
+            feColorMatrix.setAttribute('result', 'coloredNoise');
+            
+            const feComposite = document.createElementNS(svgNS, 'feComposite');
+            feComposite.setAttribute('operator', 'in');
+            feComposite.setAttribute('in', 'coloredNoise');
+            feComposite.setAttribute('in2', 'SourceGraphic');
+            feComposite.setAttribute('result', 'composite');
+            
+            const feBlend = document.createElementNS(svgNS, 'feBlend');
+            feBlend.setAttribute('mode', 'overlay');
+            feBlend.setAttribute('in', 'composite');
+            feBlend.setAttribute('in2', 'SourceGraphic');
+            
+            filter.appendChild(feTurbulence);
+            filter.appendChild(feColorMatrix);
+            filter.appendChild(feComposite);
+            filter.appendChild(feBlend);
+            
+            let shape;
+            const rx = width / 2;
+            const strokeWidth = 4;
+            
+            if (type === 'capsule') {
+                shape = document.createElementNS(svgNS, 'rect');
+                shape.setAttribute('x', String(padding + strokeWidth));
+                shape.setAttribute('y', String(padding + strokeWidth));
+                shape.setAttribute('width', String(width));
+                shape.setAttribute('height', String(height));
+                shape.setAttribute('rx', String(rx));
+                shape.setAttribute('ry', String(rx));
+            } else if (type === 'wideCapsule') {
+                shape = document.createElementNS(svgNS, 'rect');
+                shape.setAttribute('x', String(padding + strokeWidth));
+                shape.setAttribute('y', String(padding + strokeWidth));
+                shape.setAttribute('width', String(width));
+                shape.setAttribute('height', String(height));
+                shape.setAttribute('rx', String(rx));
+                shape.setAttribute('ry', String(rx));
+            } else if (type === 'circle') {
+                shape = document.createElementNS(svgNS, 'circle');
+                shape.setAttribute('cx', String(width / 2 + padding + strokeWidth));
+                shape.setAttribute('cy', String(height / 2 + padding + strokeWidth));
+                shape.setAttribute('r', String(Math.min(width, height) / 2));
+            } else if (type === 'star') {
+                shape = document.createElementNS(svgNS, 'path');
+                const cx = width / 2 + padding + strokeWidth;
+                const cy = height / 2 + padding + strokeWidth;
+                const outerR = Math.min(width, height) / 2;
+                const innerR = outerR * 0.5;
+                const d = `
+                    M ${cx} ${cy - outerR}
+                    Q ${cx + innerR} ${cy - innerR} ${cx + outerR} ${cy}
+                    Q ${cx + innerR} ${cy + innerR} ${cx} ${cy + outerR}
+                    Q ${cx - innerR} ${cy + innerR} ${cx - outerR} ${cy}
+                    Q ${cx - innerR} ${cy - innerR} ${cx} ${cy - outerR}
+                    Z
+                `;
+                shape.setAttribute('d', d);
+            } else {
+                shape = document.createElementNS(svgNS, 'ellipse');
+                shape.setAttribute('cx', String(width / 2 + padding + strokeWidth));
+                shape.setAttribute('cy', String(height / 2 + padding + strokeWidth));
+                shape.setAttribute('rx', String(width / 2));
+                shape.setAttribute('ry', String(height / 2));
+            }
+            
+            shape.setAttribute('fill', `url(#${gradientId})`);
+            shape.setAttribute('stroke', colorData.stroke);
+            shape.setAttribute('stroke-width', String(strokeWidth));
+            shape.setAttribute('filter', `url(#${filterId})`);
+            
+            return { shape, gradient, filter };
+        }
+
+        class GlassShape {
+            constructor(id) {
+                this.id = id;
+                this.element = null;
+                this.x = Math.random() * (window.innerWidth - 300);
+                this.y = Math.random() * (window.innerHeight - 500);
+                this.vx = (Math.random() - 0.5) * CONFIG.baseSpeed;
+                this.vy = (Math.random() - 0.5) * CONFIG.baseSpeed;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = (Math.random() - 0.5) * CONFIG.rotationSpeed;
+                this.scale = 0.8 + Math.random() * 0.4;
+                this.breathOffset = Math.random() * Math.PI * 2;
+                this.color = glassColors[Math.floor(Math.random() * glassColors.length)];
+                const rand = Math.random();
+                if (rand < 0.5) {
+                    this.shapeType = 'capsule';
+                } else if (rand < 0.7) {
+                    this.shapeType = 'wideCapsule';
+                } else if (rand < 0.85) {
+                    this.shapeType = 'star';
+                } else {
+                    this.shapeType = 'circle';
+                }
+                this.isDragging = false;
+                this.dragOffsetX = 0;
+                this.dragOffsetY = 0;
+                this.create();
+            }
+            
+            create() {
+                this.element = document.createElement('div');
+                this.element.className = 'glass-shape';
+                
+                let baseWidth, baseHeight;
+                if (this.shapeType === 'star' || this.shapeType === 'circle') {
+                    baseWidth = 150;
+                    baseHeight = 150;
+                } else if (this.shapeType === 'wideCapsule') {
+                    baseWidth = 250;
+                    baseHeight = 125;
+                } else {
+                    baseWidth = 150;
+                    baseHeight = 600;
+                }
+                
+                this.element.style.width = (baseWidth * this.scale) + 'px';
+                this.element.style.height = (baseHeight * this.scale) + 'px';
+                this.element.style.borderRadius = this.shapeType === 'circle' ? '50%' : '0';
+                this.element.style.backdropFilter = 'none';
+                this.element.style.webkitBackdropFilter = 'none';
+                this.element.style.background = 'transparent';
+                
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const padding = 20;
+                const svg = document.createElementNS(svgNS, 'svg');
+                svg.setAttribute('viewBox', `${-padding} ${-padding} ${baseWidth + padding * 2} ${baseHeight + padding * 2}`);
+                svg.setAttribute('width', '100%');
+                svg.setAttribute('height', '100%');
+                svg.setAttribute('overflow', 'visible');
+                
+                const { shape, gradient, filter } = createSVGShape(this.shapeType, this.color, baseWidth, baseHeight, padding);
+                
+                const defs = document.createElementNS(svgNS, 'defs');
+                defs.appendChild(gradient);
+                defs.appendChild(filter);
+                svg.appendChild(defs);
+                svg.appendChild(shape);
+                this.element.appendChild(svg);
+                
+                this.element.addEventListener('mousedown', (e) => this.onDragStart(e));
+                this.element.addEventListener('touchstart', (e) => this.onDragStart(e.touches[0]));
+                
+                document.getElementById('glassContainer').appendChild(this.element);
+                this.updatePosition();
+            }
+            
+            onDragStart(e) {
+                e.preventDefault();
+                this.isDragging = true;
+                const rect = this.element.getBoundingClientRect();
+                if (e.clientX) {
+                    this.dragOffsetX = e.clientX - rect.left;
+                    this.dragOffsetY = e.clientY - rect.top;
+                } else {
+                    this.dragOffsetX = e.pageX - rect.left;
+                    this.dragOffsetY = e.pageY - rect.top;
+                }
+                // Звук только при начале перетаскивания
+                playGlassSound();
+            }
+            
+            onDragMove(e) {
+                if (!this.isDragging) return;
+                const clientX = e.clientX || e.pageX;
+                const clientY = e.clientY || e.pageY;
+                this.x = clientX - this.dragOffsetX;
+                this.y = clientY - this.dragOffsetY;
+                this.updatePosition();
+            }
+            
+            onDragEnd() {
+                this.isDragging = false;
+                this.vx = (Math.random() - 0.5) * CONFIG.baseSpeed * 0.5;
+                this.vy = (Math.random() - 0.5) * CONFIG.baseSpeed * 0.5;
+            }
+            
+            update() {
+                if (!this.isDragging) {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    const maxX = window.innerWidth - parseFloat(this.element.style.width);
+                    const maxY = window.innerHeight - parseFloat(this.element.style.height);
+                    if (this.x <= 0 || this.x >= maxX) {
+                        this.vx *= -1;
+                        this.x = Math.max(0, Math.min(this.x, maxX));
+                    }
+                    if (this.y <= 0 || this.y >= maxY) {
+                        this.vy *= -1;
+                        this.y = Math.max(0, Math.min(this.y, maxY));
+                    }
+                    this.rotation += this.rotationSpeed;
+                }
+                this.updatePosition();
+            }
+            
+            updatePosition() {
+                const breath = Math.sin(Date.now() * CONFIG.breathSpeed + this.breathOffset) * CONFIG.breathAmplitude;
+                const currentScale = this.scale + breath;
+                this.element.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg) scale(${currentScale})`;
+            }
+        }
+
+        function initGlassVersion() {
+            const container = document.getElementById('glassContainer');
+            container.innerHTML = '';
+            glassShapes = [];
+            
+            for (let i = 0; i < CONFIG.shapeCount; i++) {
+                glassShapes.push(new GlassShape(i));
+            }
+            
+            document.addEventListener('mousemove', (e) => {
+                glassShapes.forEach(shape => shape.onDragMove(e));
+            });
+            
+            document.addEventListener('mouseup', () => {
+                glassShapes.forEach(shape => shape.onDragEnd());
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                glassShapes.forEach(shape => shape.onDragMove(e.touches[0]));
+            });
+            
+            document.addEventListener('touchend', () => {
+                glassShapes.forEach(shape => shape.onDragEnd());
+            });
+            
+            function animate() {
+                if (document.getElementById('version3').classList.contains('active')) {
+                    glassShapes.forEach(shape => shape.update());
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // ========== ВЕРСИЯ 4 - ГЕОМЕТРИЧЕСКАЯ СЕТКА ==========
+        
+        // Палитра чистых цветов (без градиентов)
+        const cellColors = [
+            '#ebe4da',  // белый
+            '#ffa9dc',  // розовый
+            '#fc5927',  // оранжевый
+            '#feba27',  // жёлтый
+            '#aea435',  // зелёный
+            '#76b3d0',  // голубой
+            '#262626'   // чёрный
+        ];
+        
+        const MIN_CELL_SIZE = 80;  // Минимальный размер ячейки в пикселях
+        const COLS = 7;
+        const ROWS = 5;
+        
+        let columnWidths = [];
+        let rowHeights = [];
+        let isResizing = false;
+        let currentHandle = null;
+        let startX, startY;
+        let initialWidths, initialHeights;
+
+        // Создание фигуры (только полукруг на всю ячейку)
+        function createFigure(rotation, colorIndex) {
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, 'svg');
+            svg.setAttribute('viewBox', '0 0 100 100');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            svg.setAttribute('preserveAspectRatio', 'none');
+
+            // Разные пути для каждого поворота - настоящая половина эллипса от угла к углу
+            let d;
+            if (rotation === 0) {
+                d = 'M0,100 A50,100 0 0,1 100,100 Z';
+            } else if (rotation === 90) {
+                d = 'M0,0 A100,50 0 0,1 0,100 Z';
+            } else if (rotation === 180) {
+                d = 'M0,0 A50,100 0 0,0 100,0 Z';
+            } else {
+                d = 'M100,0 A100,50 0 0,0 100,100 Z';
+            }
+
+            // Чистый цвет без градиента
+            const color = cellColors[colorIndex];
+            const path = document.createElementNS(svgNS, 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', color);
+            svg.appendChild(path);
+
+            return svg;
+        }
+
+        // Инициализация сетки
+        function initGrid() {
+            const container = document.getElementById('gridContainer');
+            
+            // Инициализация ширины колонок и высоты строк
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+            
+            columnWidths = Array(COLS).fill(containerWidth / COLS);
+            rowHeights = Array(ROWS).fill(containerHeight / ROWS);
+            
+            // Создание ячеек
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // Случайная ориентация полукруга
+                    const rotation = [0, 90, 180, 270][Math.floor(Math.random() * 4)];
+                    
+                    // Случайный цвет из 7 цветов палитры
+                    const colorIndex = Math.floor(Math.random() * cellColors.length);
+
+                    const figure = createFigure(rotation, colorIndex);
+                    cell.appendChild(figure);
+                    container.appendChild(cell);
+                }
+            }
+            
+            // Создание ручек для изменения размера (вертикальные)
+            for (let col = 1; col < COLS; col++) {
+                const handle = document.createElement('div');
+                handle.className = 'resize-handle-v';
+                handle.dataset.col = col;
+                handle.style.left = `calc(${col * (100 / COLS)}% - 10px)`;
+                
+                handle.addEventListener('mousedown', (e) => startResize(e, 'v', col));
+                handle.addEventListener('touchstart', (e) => startResize(e, 'v', col));
+                
+                container.appendChild(handle);
+            }
+            
+            // Создание ручек для изменения размера (горизонтальные)
+            for (let row = 1; row < ROWS; row++) {
+                const handle = document.createElement('div');
+                handle.className = 'resize-handle-h';
+                handle.dataset.row = row;
+                handle.style.top = `calc(${row * (100 / ROWS)}% - 10px)`;
+                
+                handle.addEventListener('mousedown', (e) => startResize(e, 'h', row));
+                handle.addEventListener('touchstart', (e) => startResize(e, 'h', row));
+                
+                container.appendChild(handle);
+            }
+            
+            // Глобальные обработчики для перемещения
+            document.addEventListener('mousemove', onResize);
+            document.addEventListener('mouseup', stopResize);
+            document.addEventListener('touchmove', onResize);
+            document.addEventListener('touchend', stopResize);
+        }
+
+        function startResize(e, direction, index) {
+            e.preventDefault();
+            isResizing = true;
+            currentHandle = { direction, index };
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            startX = clientX;
+            startY = clientY;
+            initialWidths = [...columnWidths];
+            initialHeights = [...rowHeights];
+        }
+
+        function onResize(e) {
+            if (!isResizing) return;
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
+            
+            if (currentHandle.direction === 'v') {
+                // Вертикальное перетаскивание - изменение ширины колонок
+                const col = currentHandle.index;
+                const leftCol = col - 1;
+                const rightCol = col;
+                
+                const newLeftWidth = initialWidths[leftCol] + deltaX;
+                const newRightWidth = initialWidths[rightCol] - deltaX;
+                
+                // Проверка минимального размера
+                if (newLeftWidth >= MIN_CELL_SIZE && newRightWidth >= MIN_CELL_SIZE) {
+                    columnWidths[leftCol] = newLeftWidth;
+                    columnWidths[rightCol] = newRightWidth;
+                    // Звук при изменении размера
+                    playResizeSound();
+                    updateGrid();
+                }
+            } else {
+                // Горизонтальное перетаскивание - изменение высоты строк
+                const row = currentHandle.index;
+                const topRow = row - 1;
+                const bottomRow = row;
+                
+                const newTopHeight = initialHeights[topRow] + deltaY;
+                const newBottomHeight = initialHeights[bottomRow] - deltaY;
+                
+                // Проверка минимального размера
+                if (newTopHeight >= MIN_CELL_SIZE && newBottomHeight >= MIN_CELL_SIZE) {
+                    rowHeights[topRow] = newTopHeight;
+                    rowHeights[bottomRow] = newBottomHeight;
+                    // Звук при изменении размера
+                    playResizeSound();
+                    updateGrid();
+                }
+            }
+        }
+
+        function stopResize() {
+            isResizing = false;
+            currentHandle = null;
+        }
+
+        function updateGrid() {
+            const container = document.getElementById('gridContainer');
+            const cells = container.querySelectorAll('.grid-cell');
+            
+            cells.forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                
+                cell.style.width = columnWidths[col] + 'px';
+                cell.style.height = rowHeights[row] + 'px';
+            });
+            
+            // Обновление позиций ручек
+            const vHandles = container.querySelectorAll('.resize-handle-v');
+            let cumulativeWidth = 0;
+            vHandles.forEach((handle, i) => {
+                cumulativeWidth += columnWidths[i];
+                handle.style.left = (cumulativeWidth - 10) + 'px';
+            });
+            
+            const hHandles = container.querySelectorAll('.resize-handle-h');
+            let cumulativeHeight = 0;
+            hHandles.forEach((handle, i) => {
+                cumulativeHeight += rowHeights[i];
+                handle.style.top = (cumulativeHeight - 10) + 'px';
+            });
+        }
+
+        // ========== ВЕРСИЯ 5 - PIXEL SNOWFALL ==========
+        
+        const PIXEL_SIZE = 10;  // Размер квадратика в пикселях
+        const COLORS = {
+            white: '#ebe4da',
+            black: '#262626',
+            yellow: '#feba27',
+            orange: '#fc5927',
+            pink: '#ffa9dc',
+            green: '#aea435',
+            blue: '#76b3d0'
+        };
+
+        let selectedColor = 'random';
+        let fallingSquares = [];  // Массив падающих квадратов
+        let grid = {};  // Объект для хранения занятых ячеек: "x,y" => true
+        let canvas, ctx;
+        let canvasWidth, canvasHeight;
+
+        // Класс падающего квадрата
+        class FallingSquare {
+            constructor(x, y, color) {
+                this.x = x;  // Координата X (колонка сетки)
+                this.y = y;  // Текущая Y координата в пикселях
+                this.startY = y;  // Начальная позиция (где кликнули)
+                this.targetY = y;  // Целевая Y координата (где остановится)
+                this.color = color;
+                this.rotation = 0;
+                this.landed = false;
+                this.speed = 5;  // Одинаковая скорость для всех
+                this.rotationSpeed = (Math.random() - 0.5) * 0.05;  // Случайная скорость вращения
+                this.gridY = -1;  // Резервируем позицию в сетке
+            }
+
+            update() {
+                if (this.landed) return;
+
+                // Падение вниз от позиции клика
+                this.y += this.speed;
+                this.rotation += this.rotationSpeed;
+
+                // Проверка достижения целевой позиции
+                if (this.y >= this.targetY) {
+                    this.y = this.targetY;
+                    this.landed = true;
+                    this.rotation = 0;
+                    // Звук при приземлении
+                    playLandSound();
+                    // Обновляем позицию в сетке (уже зарезервировано в createSquare)
+                    this.updateGrid();
+                }
+            }
+
+            draw() {
+                const pixelX = this.x * PIXEL_SIZE;
+                // Выравниваем по сетке для точного позиционирования без зазоров
+                const pixelY = Math.round(this.y / PIXEL_SIZE) * PIXEL_SIZE;
+
+                ctx.save();
+                ctx.translate(pixelX + PIXEL_SIZE / 2, pixelY + PIXEL_SIZE / 2);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-PIXEL_SIZE / 2, -PIXEL_SIZE / 2, PIXEL_SIZE, PIXEL_SIZE);
+                ctx.restore();
+            }
+
+            updateGrid() {
+                // Удаляем старую резервацию
+                if (this.gridY >= 0) {
+                    delete grid[`${this.x},${this.gridY}`];
+                }
+                // Добавляем новую позицию
+                const gridY = Math.round(this.y / PIXEL_SIZE);
+                this.gridY = gridY;
+                const key = `${this.x},${gridY}`;
+                grid[key] = true;
+            }
+
+            reserveSpot(gridY) {
+                // Резервируем место в сетке
+                this.gridY = gridY;
+                const key = `${this.x},${gridY}`;
+                grid[key] = true;
+            }
+        }
+
+        // Найти целевую Y позицию для нового квадрата
+        function findTargetY(gridX, startY) {
+            const startGridY = Math.floor(startY / PIXEL_SIZE);
+            
+            // Ищем вниз от позиции клика пока не найдём занятую ячейку
+            for (let y = startGridY; y < canvasHeight / PIXEL_SIZE; y++) {
+                const key = `${gridX},${y}`;
+                if (grid[key]) {
+                    // Нашли занятую ячейку - останавливаемся над ней
+                    return (y - 1) * PIXEL_SIZE;
+                }
+            }
+            // Ничего не нашли - квадрат упадёт вниз
+            return canvasHeight - PIXEL_SIZE;
+        }
+
+        // Создать новый квадрат
+        function createSquare(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            // Вычисляем колонку сетки
+            const gridX = Math.floor(x / PIXEL_SIZE);
+
+            // Проверка границ
+            if (gridX < 0 || gridX >= canvasWidth / PIXEL_SIZE) return;
+
+            // Выбор цвета
+            let color;
+            if (selectedColor === 'random') {
+                const colorKeys = Object.keys(COLORS);
+                color = COLORS[colorKeys[Math.floor(Math.random() * colorKeys.length)]];
+            } else {
+                color = COLORS[selectedColor];
+            }
+
+            // Находим целевую позицию
+            const startY = Math.floor(y / PIXEL_SIZE) * PIXEL_SIZE;
+            const targetY = findTargetY(gridX, startY);
+            const targetGridY = Math.floor(targetY / PIXEL_SIZE);
+
+            // Создаём падающий квадрат
+            const square = new FallingSquare(gridX, startY, color);
+            square.targetY = targetY;
+            
+            // Сразу резервируем место в сетке
+            square.reserveSpot(targetGridY);
+            
+            fallingSquares.push(square);
+        }
+
+        // Отрисовка всех квадратов
+        function draw() {
+            // Очистка
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            // Рисуем все квадраты
+            fallingSquares.forEach(square => {
+                square.draw();
+            });
+        }
+
+        // Обновление физики
+        function update() {
+            fallingSquares.forEach(square => {
+                square.update();
+            });
+        }
+
+        // Главный цикл анимации
+        function animate() {
+            if (document.getElementById('version5').classList.contains('active')) {
+                update();
+                draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Инициализация версии 5
+        function initPixelSnowfall() {
+            canvas = document.getElementById('snowCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Установка размеров canvas
+            function resizeCanvas() {
+                canvasWidth = window.innerWidth;
+                canvasHeight = window.innerHeight;
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Обработчик клика по canvas
+            canvas.addEventListener('click', (e) => {
+                createSquare(e.clientX, e.clientY);
+            });
+
+            // Обработчики для кнопок цветов
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Снятие активного класса со всех кнопок
+                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    // Добавление активного класса нажатой кнопке
+                    this.classList.add('active');
+                    // Установка выбранного цвета
+                    selectedColor = this.dataset.color;
+                });
+            });
+
+            // Установка начального активного цвета
+            document.querySelector('.color-btn[data-color="random"]').classList.add('active');
+
+            // Запуск анимации
+            animate();
+        }
+
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
+        generateGrid();
+        createFace();
+        initGlassVersion();
+        initGrid();
+        initPixelSnowfall();
+    </script>
+</body>
+</html>
